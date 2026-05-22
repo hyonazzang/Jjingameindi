@@ -1,0 +1,1340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎶 찐찐찐찐찐한 용액이야 🎶</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Jua','Malgun Gothic',sans-serif;
+  background:linear-gradient(135deg,#fff1a8 0%,#ffd7b5 50%,#c8f1ff 100%);
+  min-height:100vh;overflow:hidden;
+}
+/* ── 파티클 ── */
+#particles{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.particle{position:absolute;font-size:24px;pointer-events:none;animation:floatUp 2s ease-out forwards;}
+@keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1;}100%{transform:translateY(-180px) scale(0.2);opacity:0;}}
+
+/* ── 최상위 레이아웃 ── */
+#game{
+  width:100vw;height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:8px;position:relative;z-index:1;
+}
+
+/* ── 타이틀 화면 ── */
+#titleArea{text-align:center;margin-bottom:16px;}
+h1{
+  font-size:clamp(26px,4.5vw,52px);color:#ff5722;font-weight:900;
+  text-shadow:3px 3px 0 white;
+  animation:titleWobble 2.5s ease-in-out infinite;
+}
+@keyframes titleWobble{0%,100%{transform:rotate(-1.5deg) scale(1);}50%{transform:rotate(1.5deg) scale(1.03);}}
+.subtitle{font-size:20px;font-weight:900;color:#1565c0;margin-top:4px;}
+
+/* ── 모드 버튼 ── */
+#modeSelect{display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;justify-content:center;}
+.modeBtn{
+  font-family:'Jua',sans-serif;
+  font-size:clamp(16px,2.2vw,26px);font-weight:900;border:none;
+  border-radius:999px;padding:16px 30px;
+  color:white;cursor:pointer;transition:0.15s;
+  box-shadow:0 6px 18px rgba(0,0,0,0.2);
+}
+.modeBtn:nth-child(1){background:linear-gradient(135deg,#ff7043,#e53935);}
+.modeBtn:nth-child(2){background:linear-gradient(135deg,#1e88e5,#1565c0);}
+.modeBtn:nth-child(3){background:linear-gradient(135deg,#43a047,#2e7d32);}
+.modeBtn:hover{transform:scale(1.07) translateY(-2px);}
+.modeBtn:active{transform:scale(0.95);}
+
+/* ── 상단 정보바 ── */
+#topbar{width:100%;max-width:1400px;display:none;gap:8px;margin-top:8px;align-items:center;}
+/* ── 홈 버튼 (topbar 안 배치) ── */
+#homeBtn{
+  display:none;
+  margin:6px auto 0;
+  background:rgba(255,255,255,0.9);
+  border:2px solid rgba(200,200,200,0.6);
+  border-radius:999px;
+  padding:8px 24px;
+  font-family:'Jua',sans-serif;
+  font-size:clamp(13px,1.5vw,16px);
+  font-weight:900;
+  color:#888;
+  cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,0.08);
+  transition:0.15s;
+  white-space:nowrap;
+}
+#homeBtn:hover{background:white;color:#e53935;transform:scale(1.07);}
+/* 홈 확인 모달 */
+#homeModal{
+  position:fixed;inset:0;background:rgba(0,0,0,0.55);
+  display:none;align-items:center;justify-content:center;z-index:99999;
+}
+.homeBox{
+  background:white;border-radius:24px;padding:32px 36px;
+  text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  width:90%;max-width:380px;
+}
+.homeBox h2{font-size:24px;font-weight:900;color:#ff5722;margin-bottom:10px;}
+.homeBox p{font-size:17px;color:#666;margin-bottom:22px;line-height:1.5;}
+.homeBox .homeBtns{display:flex;gap:12px;justify-content:center;}
+.homeBox .homeBtns button{
+  flex:1;border:none;border-radius:999px;
+  font-family:'Jua',sans-serif;font-size:18px;font-weight:900;
+  padding:13px;cursor:pointer;transition:0.15s;
+}
+.homeBox .homeBtns .btnYes{background:linear-gradient(135deg,#e53935,#ff7043);color:white;}
+.homeBox .homeBtns .btnNo{background:#eee;color:#555;}
+.homeBox .homeBtns button:hover{transform:scale(1.05);}
+.infoBox{
+  flex:1;background:white;border-radius:16px;
+  padding:8px 12px;text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,0.1);
+}
+.infoTitle{font-size:13px;font-weight:900;color:#888;}
+.infoValue{font-size:28px;font-weight:900;color:#333;line-height:1.1;}
+.timerDanger{color:#e53935!important;animation:blink 0.35s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* ── 게임 영역 ── */
+#battleArea{
+  width:100%;max-width:1600px;flex:1;display:none;
+  gap:12px;margin-top:6px;margin-bottom:6px;
+  min-height:0;
+}
+.playerZone{
+  flex:1;background:rgba(255,255,255,0.55);border-radius:24px;
+  padding:10px;display:flex;flex-direction:column;
+  align-items:center;position:relative;
+  backdrop-filter:blur(6px);
+  border:2px solid rgba(255,255,255,0.85);
+  overflow:hidden;
+}
+.playerTitle{font-size:clamp(20px,2.5vw,32px);font-weight:900;}
+.playerMission{
+  margin-top:6px;font-size:clamp(20px,2.4vw,32px);
+  font-weight:900;color:#6a1b9a;text-align:center;min-height:36px;
+}
+
+/* ── 파워업 아이템 배너 ── */
+#powerupBanner{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  background:linear-gradient(135deg,#7c4dff,#e040fb);
+  color:white;font-size:clamp(22px,3vw,38px);font-weight:900;
+  padding:18px 40px;border-radius:20px;z-index:9995;
+  box-shadow:0 8px 30px rgba(124,77,255,0.5);
+  transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1),opacity 0.3s;
+  pointer-events:none;text-align:center;
+}
+#powerupBanner.show{transform:translate(-50%,-50%) scale(1);}
+
+
+/* ── 카드 ── */
+.cardWrap{
+  width:100%;display:flex;gap:12px;
+  margin-top:10px;justify-content:center;
+  flex:1;align-items:center;min-height:0;
+}
+.card{
+  flex:1;max-width:260px;
+  /* 카드 높이를 비커 안 내용이 절대 안 잘리도록 충분히 확보 */
+  height:clamp(300px,38vh,460px);
+  background:white;border-radius:24px;position:relative;
+  overflow:visible;cursor:pointer;
+  border:7px solid white;
+  box-shadow:0 8px 22px rgba(0,0,0,0.14);
+  transition:transform 0.12s, box-shadow 0.12s;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+}
+.card:hover{transform:scale(1.04);box-shadow:0 14px 32px rgba(0,0,0,0.2);}
+.card:active{transform:scale(0.96);}
+.cardLabel{
+  position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  font-size:16px;font-weight:900;color:#aaa;z-index:2;
+}
+
+/* ── 비커 ── */
+.beakerWrap{
+  /* 카드 안에서 비커+물체가 모두 보이도록 충분한 영역 확보 */
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:88%;          /* 카드 높이의 88% = 라벨 아래 전부 */
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.beaker{
+  width:clamp(110px,16vw,170px);
+  height:clamp(160px,22vh,250px);
+  border:7px solid #555;border-top:none;
+  border-radius:0 0 26px 26px;
+  position:relative;            /* object 가 이 안에서 position:absolute */
+  overflow:visible;             /* 물체가 비커 위로 튀어나와도 보이게 */
+  background:rgba(230,245,255,0.6);
+  flex-shrink:0;
+}
+/* 물 */
+.water{
+  position:absolute;bottom:0;left:0;right:0;
+  border-radius:0 0 20px 20px;
+  background:linear-gradient(to bottom,#81d4fa,#0288d1);
+  transition:height 0.55s ease;
+  overflow:hidden;
+}
+/* 기포 */
+.bubble{
+  position:absolute;border-radius:50%;
+  background:rgba(255,255,255,0.55);
+  animation:bubbleRise var(--dur,2s) ease-in infinite;
+  bottom:0;
+}
+@keyframes bubbleRise{
+  0%{transform:translateY(0) translateX(0);opacity:0.7;}
+  100%{transform:translateY(-260px) translateX(var(--dx,0px));opacity:0;}
+}
+/* 물체 이모지 – 수면 위에 걸쳐 뜨도록 JS에서 bottom을 동적 계산 */
+.object{
+  position:absolute;
+  left:50%;transform:translateX(-50%);
+  font-size:clamp(38px,5.5vw,66px);
+  line-height:1;
+  transition:bottom 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  filter:drop-shadow(0 3px 6px rgba(0,0,0,0.22));
+  white-space:nowrap;
+  z-index:5;
+}
+
+/* ── 피드백 오버레이 ── */
+.feedback-overlay{
+  position:absolute;inset:0;border-radius:24px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:20;opacity:0;pointer-events:none;transition:opacity 0.12s;
+}
+.feedback-overlay.show{opacity:1;}
+.feedback-mark{
+  font-size:clamp(70px,12vw,130px);line-height:1;
+  animation:popMark 0.32s cubic-bezier(0.175,0.885,0.32,1.275) forwards;
+}
+.feedback-text{font-size:clamp(20px,2.5vw,34px);font-weight:900;color:white;margin-top:6px;}
+@keyframes popMark{
+  0%{transform:scale(0.2) rotate(-15deg);}
+  70%{transform:scale(1.25) rotate(4deg);}
+  100%{transform:scale(1) rotate(0);}
+}
+
+/* ── 플레이어별 콤보 배너 (고정 위치) ── */
+#comboP1{
+  position:fixed;top:16px;left:20px;
+  font-size:clamp(20px,2.8vw,36px);font-weight:900;
+  color:white;background:linear-gradient(135deg,#e53935,#ff6d00);
+  padding:8px 20px;border-radius:999px;display:none;z-index:999;
+  box-shadow:0 5px 16px rgba(229,57,53,0.5);
+}
+#comboP2{
+  position:fixed;top:16px;right:20px;
+  font-size:clamp(20px,2.8vw,36px);font-weight:900;
+  color:white;background:linear-gradient(135deg,#1565c0,#1e88e5);
+  padding:8px 20px;border-radius:999px;display:none;z-index:999;
+  box-shadow:0 5px 16px rgba(21,101,192,0.5);
+}
+@keyframes comboPop{0%{transform:scale(0.5);}100%{transform:scale(1);}}
+.playerStreak{
+  font-size:clamp(13px,1.6vw,18px);font-weight:900;color:#ff9800;
+  margin-top:2px;min-height:20px;
+}
+
+
+/* ── 플로팅 점수 ── */
+.floatingScore{
+  position:fixed;font-size:28px;font-weight:900;
+  pointer-events:none;z-index:9999;
+  animation:floatScore 0.9s ease-out forwards;
+}
+@keyframes floatScore{
+  0%{transform:translateY(0) scale(1);opacity:1;}
+  100%{transform:translateY(-90px) scale(0.7);opacity:0;}
+}
+
+/* ── 결과 화면 ── */
+#resultScreen{
+  position:fixed;inset:0;background:rgba(255,255,255,0.97);
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;overflow-y:auto;padding:20px;
+}
+#resultEmoji{font-size:90px;}
+#resultTitle{font-size:clamp(38px,6vw,70px);font-weight:900;color:#ff9800;margin-top:8px;}
+#finalScore{
+  font-size:clamp(24px,3.5vw,44px);font-weight:900;color:#e53935;
+  margin-top:16px;text-align:center;line-height:1.6;
+}
+#rankBadge{
+  margin-top:14px;font-size:40px;font-weight:900;
+  border-radius:16px;padding:10px 36px;
+}
+/* 탑10 리더보드 */
+#leaderboard{
+  margin-top:20px;width:100%;max-width:520px;
+  background:white;border-radius:20px;
+  box-shadow:0 6px 20px rgba(0,0,0,0.1);
+  overflow:hidden;
+}
+#leaderboard h2{
+  background:linear-gradient(135deg,#ff9800,#f44336);
+  color:white;font-size:22px;font-weight:900;
+  padding:14px 20px;text-align:center;
+}
+.lbRow{
+  display:flex;align-items:center;padding:10px 18px;
+  border-bottom:1px solid #f0f0f0;gap:12px;
+}
+.lbRow:last-child{border-bottom:none;}
+.lbRank{font-size:22px;font-weight:900;min-width:36px;color:#aaa;}
+.lbRank.gold{color:#ffd700;}
+.lbRank.silver{color:#9e9e9e;}
+.lbRank.bronze{color:#cd7f32;}
+.lbName{flex:1;font-size:18px;font-weight:900;}
+.lbScore{font-size:20px;font-weight:900;color:#e53935;}
+.lbNew{
+  font-size:12px;font-weight:900;background:#e53935;color:white;
+  border-radius:999px;padding:2px 8px;margin-left:6px;
+}
+
+#restartBtn{
+  margin-top:20px;border:none;border-radius:999px;
+  background:linear-gradient(135deg,#43a047,#66bb6a);
+  color:white;padding:18px 46px;font-size:clamp(20px,2.5vw,28px);
+  font-weight:900;cursor:pointer;font-family:'Jua',sans-serif;
+  box-shadow:0 6px 18px rgba(67,160,71,0.4);transition:0.15s;
+}
+#restartBtn:hover{transform:scale(1.05);}
+
+/* ── 이름 입력 모달 ── */
+#nameModal{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);
+  display:none;align-items:center;justify-content:center;z-index:99999;
+}
+.nameBox{
+  background:white;border-radius:24px;padding:36px 40px;
+  text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.25);
+  width:90%;max-width:420px;
+}
+.nameBox h2{font-size:28px;font-weight:900;color:#ff5722;margin-bottom:16px;}
+.nameBox input{
+  width:100%;font-size:22px;font-family:'Jua',sans-serif;
+  border:3px solid #ff9800;border-radius:12px;padding:12px 16px;
+  text-align:center;outline:none;
+}
+.nameBox button{
+  margin-top:18px;width:100%;border:none;border-radius:999px;
+  background:linear-gradient(135deg,#ff7043,#e53935);
+  color:white;font-size:22px;font-weight:900;font-family:'Jua',sans-serif;
+  padding:14px;cursor:pointer;
+}
+
+/* ── 깜짝 퀴즈 팝업 ── */
+.quizPopup{
+  position:absolute;inset:12px;
+  background:linear-gradient(135deg,#1a1a2e,#16213e);
+  border-radius:22px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:50;
+  animation:quizIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes quizIn{
+  0%{transform:scale(0) rotate(-8deg);opacity:0;}
+  100%{transform:scale(1) rotate(0);opacity:1;}
+}
+.quizTitle{font-size:clamp(18px,2.5vw,30px);font-weight:900;color:#ffeb3b;text-align:center;}
+.quizQ{
+  margin-top:12px;font-size:clamp(14px,1.9vw,22px);
+  font-weight:700;color:white;text-align:center;padding:0 16px;line-height:1.5;
+}
+.quizBtns{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:16px;width:92%;}
+.quizBtn{
+  font-size:clamp(16px,2vw,24px);font-weight:900;font-family:'Jua',sans-serif;
+  padding:12px 8px;border:none;border-radius:14px;cursor:pointer;
+  background:linear-gradient(135deg,#42a5f5,#1565c0);
+  color:white;
+  flex:1 1 calc(50% - 10px);
+  min-width:80px;
+  max-width:calc(50% - 6px);
+  box-sizing:border-box;
+  text-align:center;
+  transition:0.15s;
+}
+/* O/X 2지선다는 버튼을 더 크게 */
+.quizBtns.two .quizBtn{
+  flex:1 1 calc(50% - 10px);
+  max-width:calc(50% - 6px);
+  font-size:clamp(26px,3.5vw,46px);
+}
+.quizBtn:hover{transform:scale(1.06);}
+
+/* ── 긴장감 pulse 링 ── */
+.tensionRing{
+  position:fixed;inset:0;border:8px solid rgba(255,23,68,0);
+  pointer-events:none;z-index:9990;border-radius:0;
+  transition:border-color 0.3s;
+}
+.tensionRing.active{
+  border-color:rgba(255,23,68,0.55);
+  animation:ringPulse 0.6s ease-in-out infinite alternate;
+}
+@keyframes ringPulse{0%{border-color:rgba(255,23,68,0.2);}100%{border-color:rgba(255,23,68,0.7);}}
+
+/* ── 1인 모드 전용 퀘스천 타이머바 ── */
+#questionTimerBar{
+  width:100%;height:8px;background:#eee;border-radius:999px;
+  margin-top:6px;overflow:hidden;display:none;
+}
+#questionTimerFill{
+  height:100%;border-radius:999px;
+  background:linear-gradient(90deg,#43a047,#ff9800,#e53935);
+  transition:width 0.1s linear;
+}
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<div class="tensionRing" id="tensionRing"></div>
+<div id="powerupBanner">⚡ 파워업!</div>
+<div id="comboP1">🔥 COMBO!</div>
+<div id="comboP2">🔥 COMBO!</div>
+
+<!-- 홈 확인 모달 -->
+<div id="homeModal">
+  <div class="homeBox">
+    <h2>🏠 홈으로 돌아가기</h2>
+    <p>게임이 종료되고<br>점수가 저장되지 않아요.<br>정말 나가시겠어요?</p>
+    <div class="homeBtns">
+      <button class="btnYes" onclick="goHome()">나갈게요</button>
+      <button class="btnNo" onclick="cancelHome()">계속 할게요</button>
+    </div>
+  </div>
+</div>
+
+<!-- 이름 입력 모달 -->
+<div id="nameModal">
+  <div class="nameBox">
+    <h2>🔬 이름을 입력하세요!</h2>
+    <input type="text" id="nameInput" maxlength="8" placeholder="예) 홍길동" />
+    <button onclick="confirmName()">게임 시작! 🚀</button>
+  </div>
+</div>
+
+<div id="game">
+  <div id="titleArea">
+    <h1>🎶 찐찐찐찐찐한 용액이야 🎶</h1>
+    <div class="subtitle" id="bestRecord">👑 우리반 1위 기록 없음</div>
+  </div>
+  <!-- 숨겨진 초기화 버튼 (비번 입력 방식) -->
+  <button id="resetBtn" onclick="resetConfirm()" title="관리자" style="position:fixed;bottom:10px;right:10px;opacity:0.08;font-size:11px;background:none;border:1px solid #aaa;border-radius:6px;padding:4px 8px;cursor:pointer;color:#555;font-family:Jua,sans-serif;z-index:9999;">초기화</button>
+  <div id="modeSelect">
+    <button class="modeBtn" onclick="askName(1)">🎯 1인 랭킹전</button>
+    <button class="modeBtn" onclick="startCountdown(2)">⚔️ 2인 경쟁 모드</button>
+  </div>
+
+  <!-- 홈 버튼 (topbar 위 가운데) -->
+  <button id="homeBtn" onclick="askGoHome()">🏠 홈</button>
+  <!-- 상단 정보바 -->
+  <div id="topbar">
+    <div class="infoBox">
+      <div class="infoTitle">⭐ 점수</div>
+      <div class="infoValue" id="score">0</div>
+    </div>
+    <div class="infoBox">
+      <div class="infoTitle">⏰ 시간</div>
+      <div class="infoValue" id="timer">30</div>
+    </div>
+    <div class="infoBox" id="p2box" style="display:none">
+      <div class="infoTitle">🟦 2P</div>
+      <div class="infoValue" id="score2display">0</div>
+    </div>
+  </div>
+  <!-- 문제별 타이머바 (1인 모드) -->
+  <div id="questionTimerBar"><div id="questionTimerFill" style="width:100%"></div></div>
+
+  <!-- 게임 배틀 영역 -->
+  <div id="battleArea">
+    <!-- 1P -->
+    <div class="playerZone">
+      <div id="feedback1" class="feedback-overlay">
+        <div id="mark1" class="feedback-mark"></div>
+        <div id="text1" class="feedback-text"></div>
+      </div>
+      <div class="playerTitle" id="p1title">🟥 1P</div>
+      <div class="playerMission" id="mission1"></div>
+      <div class="playerStreak" id="streak1display"></div>
+      <div class="cardWrap">
+        <div class="card" onclick="choose(1,'left')">
+          <div class="cardLabel">A</div>
+          <div class="beakerWrap">
+            <div class="beaker" id="beaker1L">
+              <div class="water" id="water1L" style="height:65%"></div>
+              <div class="object" id="p1left"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" onclick="choose(1,'right')">
+          <div class="cardLabel">B</div>
+          <div class="beakerWrap">
+            <div class="beaker" id="beaker1R">
+              <div class="water" id="water1R" style="height:65%"></div>
+              <div class="object" id="p1right"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2P -->
+    <div class="playerZone" id="player2zone">
+      <div id="feedback2" class="feedback-overlay">
+        <div id="mark2" class="feedback-mark"></div>
+        <div id="text2" class="feedback-text"></div>
+      </div>
+      <div class="playerTitle">🟦 2P</div>
+      <div class="playerMission" id="mission2"></div>
+      <div class="playerStreak" id="streak2display"></div>
+      <div class="cardWrap">
+        <div class="card" onclick="choose(2,'left')">
+          <div class="cardLabel">A</div>
+          <div class="beakerWrap">
+            <div class="beaker" id="beaker2L">
+              <div class="water" id="water2L" style="height:65%"></div>
+              <div class="object" id="p2left"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" onclick="choose(2,'right')">
+          <div class="cardLabel">B</div>
+          <div class="beakerWrap">
+            <div class="beaker" id="beaker2R">
+              <div class="water" id="water2R" style="height:65%"></div>
+              <div class="object" id="p2right"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 결과 화면 -->
+<div id="resultScreen">
+  <div id="resultEmoji">🎉</div>
+  <div id="resultTitle">게임 종료!</div>
+  <div id="finalScore"></div>
+  <div id="rankBadge"></div>
+  <div id="leaderboard" style="display:none">
+    <h2>🏆 우리반 TOP 10</h2>
+    <div id="lbBody"></div>
+  </div>
+  <button id="restartBtn" onclick="location.reload()">🔄 다시 하기</button>
+</div>
+
+<script>
+/* ====================================================
+   데이터 – 문제 풀
+==================================================== */
+const questionPool=[
+  {emoji:"🥚",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🍅",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🥔",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🧊",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🦆",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"⚫",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🍎",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🐟",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🥚",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🧪 묽은 용액 찾기!", findDense:false},
+  {emoji:"🍅",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🧪 묽은 용액 찾기!", findDense:false},
+  {emoji:"🦆",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🧪 묽은 용액 찾기!", findDense:false},
+  {emoji:"🧊",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🧪 묽은 용액 찾기!", findDense:false},
+  {emoji:"🍊",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🧪 묽은 용액 찾기!", findDense:false},
+  {emoji:"🐠",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🧪 묽은 용액 찾기!", findDense:false},
+  {emoji:"⛵",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+  {emoji:"🏊",  floatClass:"floatHigh", sinkClass:"floatLow",  mission:"🔥 진한 용액 찾기!", findDense:true},
+];
+
+const bonusQuiz=[
+  {q:"흙탕물은 용액이다.",choices:["O","X"],answer:"X"},
+  {q:"용액은 맛이나 색깔 등의 성질이 일정하다.",choices:["O","X"],answer:"O"},
+  {q:"용해되기 전과 후의 무게는 같다.",choices:["O","X"],answer:"O"},
+  {q:"같은 온도, 같은 양의 물에\n가장 많이 용해되는 용질은?",choices:["설탕","소금","백반"],answer:"설탕"},
+  {q:"같은 온도, 같은 양의 물에\n가장 적게 용해되는 용질은?",choices:["설탕","소금","백반"],answer:"백반"},
+  {q:"각설탕이 용해되면, 각설탕은 사라진다.",choices:["O","X"],answer:"X"},
+  {q:"각설탕이 용해되면, 크기가 작아지다가\n눈에 보이지 않게 된다.",choices:["O","X"],answer:"O"},
+  {q:"미숫가루를 탄 물은 용액이다.",choices:["O","X"],answer:"X"},
+  {q:"다음 중 물에 녹지 않는 것은?",choices:["설탕","가루 바이타민","탄산칼슘"],answer:"탄산칼슘"},
+  {q:"어떤 물질이 다른 물질에 녹아 골고루\n섞이는 현상은?",choices:["용매","용질","용해","용액"],answer:"용해"},
+  {q:"용액은 뜨거나 가라앉는 것이 없다.",choices:["O","X"],answer:"O"},
+  {q:"더 많은 양의 용질이 용해되는 것은?",choices:["따뜻한 물","차가운 물"],answer:"따뜻한 물"},
+];
+
+
+/* ====================================================
+   상태
+==================================================== */
+let mode=1, playerName='익명';
+let score1=0, score2=0;
+let combo1=0, combo2=0;
+let q1, q2;
+let gameTime=30, gameTimer;
+let quizCount1=0, quizCount2=0;
+let streak1=0, streak2=0, maxStreak1=0, maxStreak2=0;
+let questionStartTime=0;
+const QUESTION_TIME_LIMIT=8;
+let qtTimer=null, qtElapsed=0;
+let multiplier1=1, multiplier2=1;
+let shield1=false, shield2=false;
+let frozen1=false, frozen2=false;
+let totalCorrect1=0, totalCorrect2=0;
+let totalWrong1=0, totalWrong2=0;
+// 비커 실제 높이(px) – renderQ에서 측정
+let beakerH=220;
+
+/* ====================================================
+   BGM – Web Audio로 귀여운 멜로디 생성
+==================================================== */
+let audioCtx;
+let bgmNodes=[];
+let bgmPlaying=false;
+
+function getAudio(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  // 모바일(iOS/Android)에서 suspended 상태면 resume
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+// iOS/Android: 첫 터치·클릭 시 AudioContext를 미리 활성화
+function unlockAudio(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
+  // 무음 재생으로 잠금 해제
+  const buf=audioCtx.createBuffer(1,1,22050);
+  const src=audioCtx.createBufferSource();
+  src.buffer=buf; src.connect(audioCtx.destination); src.start(0);
+  document.removeEventListener('touchstart',unlockAudio);
+  document.removeEventListener('touchend',unlockAudio);
+  document.removeEventListener('click',unlockAudio);
+}
+document.addEventListener('touchstart',unlockAudio,{once:true});
+document.addEventListener('touchend',unlockAudio,{once:true});
+document.addEventListener('click',unlockAudio,{once:true});
+
+// 배경음악: 경쾌한 반복 루프 (Web Audio oscillator + 간단 화음)
+function startBGM(){
+  if(bgmPlaying) return;
+  bgmPlaying=true;
+  const ctx=getAudio();
+  // 멜로디 음표 (Hz, 박자 초)
+  const melody=[
+    [523,0.18],[587,0.18],[659,0.18],[698,0.18],
+    [784,0.36],[698,0.18],[659,0.18],
+    [587,0.18],[523,0.18],[494,0.18],[523,0.36],
+    [659,0.18],[784,0.18],[880,0.36],[784,0.18],[698,0.18],
+    [659,0.18],[587,0.18],[523,0.36],[0,0.18],
+  ];
+  // 반주 화음
+  const bass=[
+    [262,0.72],[294,0.72],[330,0.72],[349,0.72],
+    [294,0.72],[330,0.72],[262,0.72],[0,0.36],
+  ];
+
+  function scheduleLoop(startTime){
+    if(!bgmPlaying) return;
+    let t=startTime;
+    melody.forEach(([freq,dur])=>{
+      if(freq>0){
+        const o=ctx.createOscillator();
+        const g=ctx.createGain();
+        o.type='triangle';
+        o.frequency.value=freq;
+        g.gain.setValueAtTime(0.001,t);
+        g.gain.linearRampToValueAtTime(0.07,t+0.02);
+        g.gain.setValueAtTime(0.07,t+dur-0.04);
+        g.gain.linearRampToValueAtTime(0.001,t+dur);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(t); o.stop(t+dur);
+        bgmNodes.push(o,g);
+      }
+      t+=dur;
+    });
+    // 반주
+    let tb=startTime;
+    bass.forEach(([freq,dur])=>{
+      if(freq>0){
+        const o=ctx.createOscillator();
+        const g=ctx.createGain();
+        o.type='sine';
+        o.frequency.value=freq;
+        g.gain.setValueAtTime(0.001,tb);
+        g.gain.linearRampToValueAtTime(0.04,tb+0.05);
+        g.gain.setValueAtTime(0.04,tb+dur-0.08);
+        g.gain.linearRampToValueAtTime(0.001,tb+dur);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(tb); o.stop(tb+dur);
+        bgmNodes.push(o,g);
+      }
+      tb+=dur;
+    });
+    // 루프 – 멜로디 전체 길이 계산
+    const totalDur=melody.reduce((s,[,d])=>s+d,0);
+    setTimeout(()=>scheduleLoop(ctx.currentTime+0.05), (totalDur-0.1)*1000);
+  }
+  scheduleLoop(ctx.currentTime+0.1);
+}
+
+function stopBGM(){
+  bgmPlaying=false;
+  bgmNodes.forEach(n=>{ try{n.stop&&n.stop();}catch(e){} });
+  bgmNodes=[];
+}
+
+function playTone(freqs,times,vol,type='sine'){
+  try{
+    const ctx=getAudio();
+    freqs.forEach((f,i)=>{
+      const g=ctx.createGain(), o=ctx.createOscillator();
+      o.type=type; o.frequency.value=f;
+      g.gain.setValueAtTime(vol,ctx.currentTime+times[i]);
+      g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+times[i]+0.22);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(ctx.currentTime+times[i]);
+      o.stop(ctx.currentTime+times[i]+0.28);
+    });
+  }catch(e){}
+}
+const sounds={
+  correct:()=>playTone([523,659,784,1047],[0,0.12,0.24,0.36],0.28),
+  wrong:()=>playTone([220,180],[0,0.12],0.3,'sawtooth'),
+  combo:()=>playTone([880,1175],[0,0.14],0.25),
+  bonus:()=>playTone([523,659,784,1047],[0,0.10,0.20,0.30],0.2),
+  tick:()=>playTone([400],[0],0.07),
+  urgentTick:()=>playTone([600],[0],0.1,'square'),
+  end:()=>playTone([330,294,262,220],[0,0.25,0.5,0.75],0.22,'sawtooth'),
+  item:()=>playTone([784,880,1047],[0,0.1,0.2],0.2),
+  freeze:()=>playTone([300,260,220],[0,0.15,0.3],0.18,'sine'),
+};
+
+/* ====================================================
+   로컬 리더보드
+==================================================== */
+function getBoard(){
+  try{ return JSON.parse(localStorage.getItem('jjin_board')||'[]'); }
+  catch(e){ return []; }
+}
+function saveBoard(b){ localStorage.setItem('jjin_board',JSON.stringify(b)); }
+function addToBoard(name,score){
+  let b=getBoard();
+  b.push({name,score,date:new Date().toLocaleDateString('ko-KR')});
+  b.sort((a,z)=>z.score-a.score);
+  b=b.slice(0,10);
+  saveBoard(b);
+  return b;
+}
+function updateBestDisplay(){
+  const b=getBoard();
+  const el=document.getElementById('bestRecord');
+  if(b.length>0) el.innerHTML=`👑 우리반 1위: ${b[0].name} ${b[0].score.toLocaleString()}점`;
+  else el.innerHTML='👑 우리반 1위 기록 없음';
+}
+
+/* ====================================================
+   홈으로 돌아가기
+==================================================== */
+function askGoHome(){
+  // 게임 일시정지 효과 (타이머만 멈춤)
+  clearInterval(gameTimer);
+  stopQuestionTimer();
+  stopBGM();
+  document.getElementById('homeModal').style.display='flex';
+}
+function cancelHome(){
+  document.getElementById('homeModal').style.display='none';
+  // 남은 시간만큼 타이머 재개
+  startBGM();
+  gameTimer=setInterval(()=>{
+    gameTime--;
+    const timerEl=document.getElementById('timer');
+    timerEl.innerText=gameTime;
+    if(gameTime<=5){
+      timerEl.className='infoValue timerDanger';
+      document.getElementById('tensionRing').classList.add('active');
+      sounds.urgentTick();
+    }
+    if(gameTime<=0){clearInterval(gameTimer); stopQuestionTimer(); stopBGM(); endGame();}
+  },1000);
+  startQuestionTimer();
+}
+function goHome(){
+  document.getElementById('homeModal').style.display='none';
+  location.reload();
+}
+
+/* ====================================================
+   리더보드 초기화 (비번)
+==================================================== */
+function resetConfirm(){
+  const pw=prompt('비밀번호를 입력하세요:');
+  if(pw===null) return;
+  if(pw==='2026'){
+    localStorage.removeItem('jjin_board');
+    updateBestDisplay();
+    alert('✅ 기록이 초기화되었습니다!');
+  } else {
+    alert('❌ 비밀번호가 틀렸습니다.');
+  }
+}
+
+/* ====================================================
+   초기화
+==================================================== */
+window.onload=()=>{
+  updateBestDisplay();
+};
+
+/* ====================================================
+   이름 입력 (1인 모드)
+==================================================== */
+function askName(m){
+  mode=m;
+  document.getElementById('nameModal').style.display='flex';
+  document.getElementById('nameInput').focus();
+  document.getElementById('nameInput').onkeydown=(e)=>{if(e.key==='Enter') confirmName();};
+}
+function confirmName(){
+  const val=document.getElementById('nameInput').value.trim();
+  playerName=val||'익명';
+  document.getElementById('nameModal').style.display='none';
+  startCountdown(mode);
+}
+
+/* ====================================================
+   카운트다운
+==================================================== */
+function startCountdown(m){
+  mode=m;
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:9998;';
+  document.body.appendChild(overlay);
+  let count=3;
+  const num=document.createElement('div');
+  num.style.cssText='font-size:200px;font-weight:900;color:white;font-family:Jua,sans-serif;transition:transform 0.2s;';
+  overlay.appendChild(num);
+
+  function tick(){
+    if(count>0){
+      num.textContent=count;
+      num.style.transform='scale(1.3)';
+      setTimeout(()=>num.style.transform='scale(1)',150);
+      sounds.tick(); count--;
+      setTimeout(tick,1000);
+    } else {
+      num.textContent='시작!';
+      num.style.fontSize='110px';
+      sounds.bonus();
+      setTimeout(()=>{overlay.remove(); startGame(m);},700);
+    }
+  }
+  tick();
+}
+
+/* ====================================================
+   게임 시작
+==================================================== */
+function startGame(m){
+  mode=m;
+  const game=document.getElementById('game');
+  game.style.justifyContent='flex-start';
+  document.getElementById('titleArea').style.transform='scale(0.6)';
+  document.getElementById('titleArea').style.marginBottom='-8px';
+  document.getElementById('modeSelect').style.display='none';
+  document.getElementById('topbar').style.display='flex';
+  document.getElementById('battleArea').style.display='flex';
+  document.getElementById('homeBtn').style.display='block';
+  if(mode===1){
+    document.getElementById('player2zone').style.display='none';
+    document.getElementById('p1title').textContent='🔬 나의 실험실';
+    document.getElementById('questionTimerBar').style.display='block';
+  } else {
+    document.getElementById('p2box').style.display='block';
+  }
+
+  // BGM 시작
+  startBGM();
+
+  makeQuestion(1);
+  if(mode===2) makeQuestion(2);
+  startQuestionTimer();
+
+  gameTimer=setInterval(()=>{
+    gameTime--;
+    const timerEl=document.getElementById('timer');
+    timerEl.innerText=gameTime;
+    if(gameTime<=5){
+      timerEl.className='infoValue timerDanger';
+      document.getElementById('tensionRing').classList.add('active');
+      sounds.urgentTick();
+    }
+    if(gameTime===20){
+      if(quizCount1<2){quizCount1++; showQuiz(1);}
+      if(mode===2&&quizCount2<2){quizCount2++; showQuiz(2);}
+    }
+    if(gameTime===10){
+      if(quizCount1<2){quizCount1++; showQuiz(1);}
+      if(mode===2&&quizCount2<2){quizCount2++; showQuiz(2);}
+    }
+    if(gameTime<=0){clearInterval(gameTimer); stopQuestionTimer(); stopBGM(); endGame();}
+  },1000);
+}
+
+/* ====================================================
+   문제별 타이머 (속도 점수용)
+==================================================== */
+function startQuestionTimer(){
+  stopQuestionTimer();
+  questionStartTime=Date.now();
+  qtElapsed=0;
+  if(mode!==1) return;
+  const fill=document.getElementById('questionTimerFill');
+  fill.style.width='100%';
+  qtTimer=setInterval(()=>{
+    qtElapsed=(Date.now()-questionStartTime)/1000;
+    const pct=Math.max(0,100-((qtElapsed/QUESTION_TIME_LIMIT)*100));
+    fill.style.width=pct+'%';
+    if(pct<=0) stopQuestionTimer();
+  },100);
+}
+function stopQuestionTimer(){
+  if(qtTimer){clearInterval(qtTimer); qtTimer=null;}
+}
+
+/* ====================================================
+   비커 기포
+==================================================== */
+function makeBubbles(beakerId, count){
+  const el=document.getElementById(beakerId);
+  if(!el) return;
+  el.querySelectorAll('.bubble').forEach(b=>b.remove());
+  for(let i=0;i<count;i++){
+    const b=document.createElement('div');
+    b.className='bubble';
+    const sz=Math.random()*7+3;
+    b.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*80+10}%;`+
+      `--dur:${(Math.random()*1.8+1.2).toFixed(2)}s;`+
+      `--dx:${((Math.random()-0.5)*18).toFixed(1)}px;`+
+      `animation-delay:${(Math.random()*2).toFixed(2)}s;`;
+    el.querySelector('.water').appendChild(b);
+  }
+}
+
+/* ====================================================
+   물체 위치 계산
+   비커 overflow:visible, bottom = 수면 높이(px) - 이모지 절반
+   floatHigh: 수면 위에 상당히 뜸 (수면 + 이모지 높이의 60%)
+   floatMid:  수면 경계에 걸쳐 뜸 (수면 + 이모지 높이의 30%)
+   floatLow:  물 속 바닥 근처로 가라앉음
+==================================================== */
+function setObjectPosition(objEl, beakerEl, waterEl, floatClass){
+  // 비커 실제 높이
+  const bH=beakerEl.getBoundingClientRect().height || 220;
+  // 물 높이(px) = 비커높이 × (water% / 100)
+  const waterPct=parseFloat(waterEl.style.height||'65')/100;
+  const waterPx=bH*waterPct;
+  // 이모지 실제 높이 (대략 font-size의 1.1배)
+  const fs=parseFloat(getComputedStyle(objEl).fontSize)||52;
+  const objH=fs*1.1;
+
+  let bottomPx;
+  if(floatClass==='floatHigh'){
+    // 수면 위에 뜸 → 이모지 하단이 수면에 살짝 걸쳐서 떠 있는 모습
+    // 이모지의 약 20%만 물에 잠기고 80%는 물 밖에 있음
+    bottomPx=waterPx - objH*0.2;
+  } else {
+    // floatLow: 바닥에 완전히 가라앉음 (이모지 전체가 물 속)
+    bottomPx=objH*0.1;
+  }
+  objEl.style.bottom=bottomPx+'px';
+}
+
+/* ====================================================
+   문제 생성 & 렌더
+==================================================== */
+function makeQuestion(player){
+  const base=questionPool[Math.floor(Math.random()*questionPool.length)];
+  const floatOnLeft=Math.random()<0.5;
+  const q={
+    emoji:     base.emoji,
+    mission:   base.mission,
+    findDense: base.findDense,
+    leftClass:  floatOnLeft ? base.floatClass : base.sinkClass,
+    rightClass: floatOnLeft ? base.sinkClass  : base.floatClass,
+    // 진한 용액(뜨는 쪽) vs 묽은 용액(가라앉는 쪽)
+    answer: (base.findDense === floatOnLeft) ? 'left' : 'right',
+    water: 65
+  };
+
+  // 배수 찬스
+  const roll=Math.random();
+  let mult=1;
+  if(roll<0.05) mult=3;
+  else if(roll<0.20) mult=2;
+  if(player===1){ multiplier1=mult; }
+  else { multiplier2=mult; }
+
+  if(player===1){q1=q; renderQ(1,q);}
+  else{q2=q; renderQ(2,q);}
+  startQuestionTimer();
+}
+
+function renderQ(player,q){
+  const lEl=document.getElementById(`p${player}left`);
+  const rEl=document.getElementById(`p${player}right`);
+  lEl.innerText=q.emoji; rEl.innerText=q.emoji;
+  // 클래스 초기화 (bottom은 JS에서 직접 설정)
+  lEl.className='object'; rEl.className='object';
+
+  const lW=document.getElementById(`water${player}L`);
+  const rW=document.getElementById(`water${player}R`);
+  if(lW) lW.style.height=`${q.water}%`;
+  if(rW) rW.style.height=`${q.water}%`;
+
+  makeBubbles(`beaker${player}L`, 4);
+  makeBubbles(`beaker${player}R`, 4);
+
+  // 위치는 레이아웃 완료 후 측정
+  requestAnimationFrame(()=>{
+    setTimeout(()=>{
+      const bL=document.getElementById(`beaker${player}L`);
+      const bR=document.getElementById(`beaker${player}R`);
+      if(bL&&lW) setObjectPosition(lEl,bL,lW,q.leftClass);
+      if(bR&&rW) setObjectPosition(rEl,bR,rW,q.rightClass);
+    },60);
+  });
+
+  // 배수 뱃지
+  const mult=player===1?multiplier1:multiplier2;
+  const multBadge=mult===3
+    ?'<span style="background:#e53935;color:white;border-radius:8px;padding:3px 12px;margin-left:8px;font-size:0.82em;vertical-align:middle">🔥 3배!</span>'
+    :mult===2
+    ?'<span style="background:#ff9800;color:white;border-radius:8px;padding:3px 12px;margin-left:8px;font-size:0.82em;vertical-align:middle">⚡ 2배!</span>'
+    :'';
+  document.getElementById(`mission${player}`).innerHTML=q.mission+multBadge;
+}
+
+
+function showPowerupBanner(text, color){
+  const b=document.getElementById('powerupBanner');
+  b.innerText=text;
+  b.style.background=`linear-gradient(135deg,${color},${color}cc)`;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t=setTimeout(()=>b.classList.remove('show'),1600);
+}
+
+/* ====================================================
+   선택
+==================================================== */
+function choose(player,side){
+  const q=player===1?q1:q2;
+  if(!q) return;
+  if(player===1&&frozen1) return;
+  if(player===2&&frozen2) return;
+  if(side===q.answer) correctAnswer(player);
+  else wrongAnswer(player);
+}
+
+/* ====================================================
+   피드백 오버레이
+==================================================== */
+const correctMsgs=['완벽해!','최고야!','정답!','천재?!','대박!','굿!'];
+const wrongMsgs=['으악~','틀렸어!','다시!','아니야!','앗!'];
+
+function showVisualFeedback(player,isCorrect){
+  const ov=document.getElementById(`feedback${player}`);
+  const mk=document.getElementById(`mark${player}`);
+  const tx=document.getElementById(`text${player}`);
+  if(isCorrect){
+    ov.style.background='rgba(46,125,50,0.88)';
+    mk.innerText='⭕';
+    tx.innerText=correctMsgs[Math.floor(Math.random()*correctMsgs.length)];
+  } else {
+    ov.style.background='rgba(198,40,40,0.88)';
+    mk.innerText='❌';
+    tx.innerText=wrongMsgs[Math.floor(Math.random()*wrongMsgs.length)];
+  }
+  ov.classList.add('show');
+  setTimeout(()=>ov.classList.remove('show'),500);
+}
+
+/* ====================================================
+   파티클 & 플로팅 점수
+==================================================== */
+function spawnParticle(emoji,x,y){
+  const p=document.createElement('div');
+  p.className='particle'; p.innerText=emoji;
+  p.style.left=(x-16)+'px'; p.style.top=(y-16)+'px';
+  document.getElementById('particles').appendChild(p);
+  setTimeout(()=>p.remove(),2100);
+}
+function showFloatingScore(txt,x,y,color){
+  const el=document.createElement('div');
+  el.className='floatingScore'; el.innerText=txt;
+  el.style.cssText=`left:${x}px;top:${y}px;color:${color};`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
+
+/* ====================================================
+   정답 처리
+==================================================== */
+function correctAnswer(player){
+  sounds.correct();
+  showVisualFeedback(player,true);
+  if(player===1) totalCorrect1++; else totalCorrect2++;
+
+  const ev=window.event||{};
+  const ex=ev.clientX||window.innerWidth/2;
+  const ey=ev.clientY||window.innerHeight/2;
+  spawnParticle(['⭐','✨','💫','🌟'][Math.floor(Math.random()*4)],ex,ey);
+
+  const elapsed=(Date.now()-questionStartTime)/1000;
+  const speedBonus=Math.max(0, Math.round((1-Math.min(elapsed,QUESTION_TIME_LIMIT)/QUESTION_TIME_LIMIT)*200));
+  let combo=player===1?++combo1:++combo2;
+  const comboBonus=Math.min(combo-1,5)*20;
+  const mult=player===1?multiplier1:multiplier2;
+  const gained=Math.round((100+speedBonus+comboBonus)*mult);
+
+  if(player===1){ streak1++; maxStreak1=Math.max(maxStreak1,streak1); }
+  else { streak2++; maxStreak2=Math.max(maxStreak2,streak2); }
+  const myStreak=player===1?streak1:streak2;
+
+  // 각 zone 안 스트릭 표시
+  const sEl=document.getElementById(`streak${player}display`);
+  if(sEl) sEl.innerText=myStreak>=2?`🔥 ${myStreak}연속 정답!`:'';
+
+  const multTxt=mult>=3?' 🔥3배!!':mult>=2?' ⚡2배!':'';
+  const label=`+${gained}${speedBonus>100?' ⚡빠름!':''}${multTxt}`;
+  showFloatingScore(label,ex,ey,mult>=3?'#e53935':mult>=2?'#ff9800':'#2e7d32');
+
+  if(mult>=2){
+    spawnParticle(mult>=3?'🔥':'⚡',ex,ey);
+    spawnParticle('💥',ex+50,ey-20);
+  }
+
+  if(player===1){ score1+=gained; multiplier1=1; }
+  else{ score2+=gained; multiplier2=1; }
+  updateScore();
+
+  if(combo>=2){ sounds.combo(); showComboInZone(player,combo); }
+  if(myStreak>0&&myStreak%5===0){
+    spawnParticle('🔥',ex,ey);
+    spawnParticle('🎉',ex+60,ey-30);
+  }
+
+  makeQuestion(player);
+}
+
+function wrongAnswer(player){
+  sounds.wrong();
+  showVisualFeedback(player,false);
+  if(player===1) totalWrong1++; else totalWrong2++;
+
+  const ev=window.event||{};
+  spawnParticle('💧',ev.clientX||window.innerWidth/2,ev.clientY||window.innerHeight/2);
+
+  // 오답 감점: -50점
+  const penalty=50;
+  if(player===1){ score1=Math.max(0,score1-penalty); }
+  else{ score2=Math.max(0,score2-penalty); }
+
+  if(player===1){ streak1=0; combo1=0; } else{ streak2=0; combo2=0; }
+  const sEl=document.getElementById(`streak${player}display`);
+  if(sEl) sEl.innerText='';
+  updateScore();
+
+  const ex=ev.clientX||window.innerWidth/2;
+  const ey=ev.clientY||window.innerHeight/2;
+  showFloatingScore('-50점',ex,ey,'#c62828');
+  makeQuestion(player);
+}
+
+function updateScore(){
+  const el=document.getElementById('score');
+  if(mode===1) el.innerText=score1.toLocaleString();
+  else {
+    el.innerText=score1.toLocaleString();
+    document.getElementById('score2display').innerText=score2.toLocaleString();
+  }
+}
+
+function showComboInZone(player, n){
+  const el=document.getElementById(player===1?'comboP1':'comboP2');
+  if(!el) return;
+  el.style.display='block';
+  el.innerText=`🔥 ${n} COMBO!`;
+  el.style.animation='none';
+  requestAnimationFrame(()=>{ el.style.animation='comboPop 0.25s cubic-bezier(0.34,1.56,0.64,1)'; });
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{ el.style.display='none'; },1200);
+}
+
+/* ====================================================
+   깜짝 퀴즈
+==================================================== */
+let usedQuizIdx=[];
+function getQuizQ(){
+  if(usedQuizIdx.length>=bonusQuiz.length) usedQuizIdx=[];
+  let idx;
+  do { idx=Math.floor(Math.random()*bonusQuiz.length); } while(usedQuizIdx.includes(idx));
+  usedQuizIdx.push(idx);
+  return bonusQuiz[idx];
+}
+
+function showQuiz(player){
+  const q=getQuizQ();
+  const zones=document.querySelectorAll('.playerZone');
+  const zone=player===1?zones[0]:zones[1];
+  const popup=document.createElement('div');
+  popup.className='quizPopup';
+
+  const qText=q.q.replace(/\n/g,'<br>');
+  popup.innerHTML=`
+    <div class="quizTitle">🎁 깜짝 과학 퀴즈!</div>
+    <div class="quizTitle" style="font-size:clamp(13px,1.6vw,18px);color:#aaa;margin-top:4px;font-weight:400">정답 +300점</div>
+    <div class="quizQ">${qText}</div>
+    <div class="quizBtns" id="qb${player}"></div>
+  `;
+  zone.appendChild(popup);
+  sounds.bonus();
+  zone.querySelectorAll('.card').forEach(c=>c.style.pointerEvents='none');
+
+  const area=document.getElementById(`qb${player}`);
+  if(q.choices.length===2) area.classList.add('two');
+  q.choices.forEach(c=>{
+    const btn=document.createElement('button');
+    btn.className='quizBtn'; btn.innerText=c;
+    btn.onclick=()=>{
+      if(c===q.answer){
+        if(player===1) score1+=300; else score2+=300;
+        sounds.correct(); showVisualFeedback(player,true);
+        spawnParticle('🎉',window.innerWidth*(player===1?.25:.75),window.innerHeight/2);
+      } else {
+        sounds.wrong(); showVisualFeedback(player,false);
+      }
+      updateScore();
+      popup.style.transition='0.3s'; popup.style.transform='scale(0)'; popup.style.opacity='0';
+      setTimeout(()=>{
+        popup.remove();
+        zone.querySelectorAll('.card').forEach(c=>c.style.pointerEvents='');
+      },300);
+    };
+    area.appendChild(btn);
+  });
+}
+
+/* ====================================================
+   랭킹
+==================================================== */
+function getRank(s){
+  if(s>=3000) return{label:'🏆 천재 화학자!',   bg:'#ff9800',color:'white'};
+  if(s>=2000) return{label:'🥇 수석 과학자',    bg:'#ffd700',color:'#333'};
+  if(s>=1200) return{label:'🥈 우수 실험가',    bg:'#9e9e9e',color:'white'};
+  if(s>=600)  return{label:'🥉 초보 과학자',    bg:'#cd7f32',color:'white'};
+  return       {label:'🔬 견습 실험생',          bg:'#90caf9',color:'#333'};
+}
+
+function renderLeaderboard(board, newScore){
+  const lb=document.getElementById('leaderboard');
+  const body=document.getElementById('lbBody');
+  lb.style.display='block';
+  body.innerHTML='';
+  const medals=['🥇','🥈','🥉'];
+  const rankClasses=['gold','silver','bronze'];
+  board.forEach((row,i)=>{
+    const isNew=(row.score===newScore && row.name===playerName);
+    const div=document.createElement('div');
+    div.className='lbRow';
+    if(isNew) div.style.background='#fff8e1';
+    const rankLabel=i<3?medals[i]:`${i+1}`;
+    div.innerHTML=`
+      <div class="lbRank ${i<3?rankClasses[i]:''}">${rankLabel}</div>
+      <div class="lbName">${row.name}${isNew?'<span class="lbNew">NEW</span>':''}</div>
+      <div class="lbScore">${row.score.toLocaleString()}점</div>
+    `;
+    body.appendChild(div);
+  });
+}
+
+/* ====================================================
+   종료
+==================================================== */
+function endGame(){
+  sounds.end();
+  document.getElementById('tensionRing').classList.remove('active');
+  const rs=document.getElementById('resultScreen');
+  rs.style.display='flex';
+
+  let text='', emoji='🎉';
+
+  if(mode===1){
+    const board=addToBoard(playerName,score1);
+    emoji=score1>=1200?'🏆':'🎉';
+    const accuracy=totalCorrect1+totalWrong1>0
+      ?Math.round(totalCorrect1/(totalCorrect1+totalWrong1)*100):0;
+    text=
+      `<span style="font-size:clamp(16px,2vw,22px);color:#888">${playerName}의 결과</span><br>`+
+      `<span style="font-size:clamp(52px,8vw,80px);color:#e53935;font-weight:900">${score1.toLocaleString()}점</span><br>`+
+      `<span style="font-size:clamp(16px,2vw,24px);color:#555">✅ 정답 ${totalCorrect1}개 &nbsp;❌ 오답 ${totalWrong1}개 &nbsp;🎯 정확도 ${accuracy}%</span><br>`+
+      `<span style="font-size:clamp(16px,2vw,24px);color:#555">🔥 최고 연속 정답 ${maxStreak1}개</span>`;
+    const r=getRank(score1);
+    const rb=document.getElementById('rankBadge');
+    rb.innerText=r.label;
+    rb.style.cssText=`margin-top:14px;font-size:clamp(20px,2.5vw,36px);font-weight:900;background:${r.bg};color:${r.color};padding:10px 32px;border-radius:16px;`;
+    renderLeaderboard(board, score1);
+    updateBestDisplay();
+  } else {
+    let winner='🤝 무승부!';
+    let winColor='#888';
+    if(score1>score2){winner='🟥 1P 승리!'; emoji='🏆'; winColor='#e53935';}
+    if(score2>score1){winner='🟦 2P 승리!'; emoji='🏆'; winColor='#1565c0';}
+    const acc1=totalCorrect1+totalWrong1>0?Math.round(totalCorrect1/(totalCorrect1+totalWrong1)*100):0;
+    const acc2=totalCorrect2+totalWrong2>0?Math.round(totalCorrect2/(totalCorrect2+totalWrong2)*100):0;
+    text=
+      `<div style="display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin-bottom:12px">`+
+      `<div style="text-align:center">`+
+        `<div style="font-size:clamp(18px,2.5vw,28px);font-weight:900;color:#e53935">🟥 1P</div>`+
+        `<div style="font-size:clamp(40px,6vw,64px);font-weight:900;color:#333">${score1.toLocaleString()}점</div>`+
+        `<div style="font-size:clamp(13px,1.6vw,18px);color:#666">✅${totalCorrect1} ❌${totalWrong1} 🎯${acc1}%</div>`+
+      `</div>`+
+      `<div style="display:flex;align-items:center;font-size:40px">VS</div>`+
+      `<div style="text-align:center">`+
+        `<div style="font-size:clamp(18px,2.5vw,28px);font-weight:900;color:#1565c0">🟦 2P</div>`+
+        `<div style="font-size:clamp(40px,6vw,64px);font-weight:900;color:#333">${score2.toLocaleString()}점</div>`+
+        `<div style="font-size:clamp(13px,1.6vw,18px);color:#666">✅${totalCorrect2} ❌${totalWrong2} 🎯${acc2}%</div>`+
+      `</div>`+
+      `</div>`+
+      `<div style="font-size:clamp(30px,5vw,56px);font-weight:900;color:${winColor}">${winner}</div>`;
+    document.getElementById('rankBadge').innerText='';
+  }
+
+  document.getElementById('resultEmoji').innerText=emoji;
+  document.getElementById('resultTitle').innerText='게임 종료!';
+  document.getElementById('finalScore').innerHTML=text;
+
+  for(let i=0;i<14;i++){
+    setTimeout(()=>spawnParticle(
+      ['🎉','⭐','✨','🎊','💫','🌟'][Math.floor(Math.random()*6)],
+      Math.random()*window.innerWidth,
+      Math.random()*window.innerHeight*0.6
+    ),i*140);
+  }
+}
+</script>
+</body>
+</html>
